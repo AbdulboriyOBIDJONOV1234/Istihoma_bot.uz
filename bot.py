@@ -23,30 +23,47 @@ from prayer_times import get_prayer_times, PRAYER_LABELS
 logging.basicConfig(level=logging.INFO, format="%(asctime)s %(levelname)s %(message)s")
 log = logging.getLogger(__name__)
 
-# user_id -> prayer_name yoki "task::matn" — "necha daqiqadan keyin eslat" javobini kutayotganlar
 PENDING_SNOOZE = {}
+PENDING_ACTION = {}
 
 ALLOWED_FILTER = filters.User(user_id=list(config.ALLOWED_IDS))
 
 
 def logical_date(dt: datetime) -> date:
-    """
-    Islomiy kun hisobi: agar hozirgi vaqt bugungi Bomdoddan oldin bo'lsa
-    (ya'ni yarim tundan keyin, lekin Bomdoddan oldin — masalan kech qolgan
-    Xufton qazosi), bu hali O'TGAN KUNGA tegishli deb hisoblanadi.
-    """
+    """Islomiy kun hisobi."""
     today_times = get_prayer_times(dt.date())
     if dt.time() < today_times["fajr"].time():
         return dt.date() - timedelta(days=1)
     return dt.date()
 
 
-# ───────────────────────── SALOM / TONGGI UYG'OTISH ─────────────────────────
+def main_menu():
+    return InlineKeyboardMarkup([
+        [
+            InlineKeyboardButton("🕌 Namoz", callback_data="menu:prayer"),
+            InlineKeyboardButton("🙏 Zikr", callback_data="menu:zikr"),
+        ],
+        [
+            InlineKeyboardButton("🌙 Salovat", callback_data="menu:salawat"),
+            InlineKeyboardButton("🎯 Maqsad", callback_data="menu:goal"),
+        ],
+        [
+            InlineKeyboardButton("✅ Vazifa", callback_data="menu:task"),
+            InlineKeyboardButton("📊 Statistika", callback_data="menu:stats"),
+        ],
+    ])
+
 
 async def start_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
     await update.message.reply_text(
         config.GREETING_TEXT, parse_mode="Markdown", disable_web_page_preview=True
     )
+    await update.message.reply_text("Tanlang:", reply_markup=main_menu())
+
+
+async def menu_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    await update.message.reply_text("Tanlang:", reply_markup=main_menu())
+
 
 async def send_wake_message(context: ContextTypes.DEFAULT_TYPE):
     text = config.GREETING_TEXT + "\n\n" + config.WAKE_MOTIVATION
@@ -55,6 +72,50 @@ async def send_wake_message(context: ContextTypes.DEFAULT_TYPE):
             await context.bot.send_message(user_id, text, parse_mode="Markdown", disable_web_page_preview=True)
         except Exception as e:
             log.warning(f"Uyg'otish xabari yuborilmadi {user_id}: {e}")
+
+
+async def send_morning_prompt(context: ContextTypes.DEFAULT_TYPE):
+    for user_id in config.USERS:
+        try:
+            await context.bot.send_message(user_id, config.MORNING_PROMPT)
+        except Exception as e:
+            log.warning(f"Ertalab maqsad so'rovi yuborilmadi {user_id}: {e}")
+
+
+async def send_evening_prompt(context: ContextTypes.DEFAULT_TYPE):
+    for user_id in config.USERS:
+        try:
+            await context.bot.send_message(user_id, config.EVENING_PROMPT)
+        except Exception as e:
+            log.warning(f"Kechki hisobot so'rovi yuborilmadi {user_id}: {e}")
+
+
+async def handle_menu_callback(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    query = update.callback_query
+    user_id = query.from_user.id
+    if user_id not in config.ALLOWED_IDS:
+        return
+    await query.answer()
+    _, section = query.data.split(":")
+
+    if section == "zikr":
+        PENDING_ACTION[user_id] = "add_zikr"
+        await query.edit_message_text("Zikr qo'shish. Masalan: `Subhanalloh 33` yoki faqat `Subhanalloh`")
+    elif section == "salawat":
+        PENDING_ACTION[user_id] = "add_salawat"
+        await query.edit_message_text("Salovat qo'shish. Masalan: `Allahumma salli ala Muhammad 1`")
+    elif section == "goal":
+        PENDING_ACTION[user_id] = "add_goal"
+        await query.edit_message_text("Bugun uchun maqsadingiz nima? Iltimos, qisqacha yozing.")
+    elif section == "task":
+        PENDING_ACTION[user_id] = "add_task"
+        await query.edit_message_text("Bugungi vazifani yozing.")
+    elif section == "stats":
+        end = date.today()
+        start = end - timedelta(days=6)
+        await query.edit_message_text(format_report(start, end), parse_mode="Markdown")
+    else:
+        await query.edit_message_text("Tanlang:", reply_markup=main_menu())
 
 
 # ───────────────────────── NAMOZ ESLATMALARI ─────────────────────────
@@ -127,6 +188,45 @@ async def handle_dhikr_callback(update: Update, context: ContextTypes.DEFAULT_TY
 
 async def handle_snooze_minutes(update: Update, context: ContextTypes.DEFAULT_TYPE):
     user_id = update.effective_user.id
+    if user_id in PENDING_ACTION:
+        action = PENDING_ACTION.pop(user_id)
+        text = update.message.text.strip()
+        today = logical_date(datetime.now())
+
+        if action == "add_zikr":
+            parts = text.split()
+            if len(parts) >= 2 and parts[-1].isdigit():
+                zikr_name = " ".join(parts[:-1])
+                count = int(parts[-1])
+            else:
+                zikr_name = text
+                count = 1
+            storage.add_custom_zikr(user_id, today, zikr_name, count)
+            await update.message.reply_text(f"✅ \"{zikr_name}\" zikri saqlandi ({count}x).")
+            return
+
+        if action == "add_salawat":
+            parts = text.split()
+            if len(parts) >= 2 and parts[-1].isdigit():
+                name = " ".join(parts[:-1])
+                count = int(parts[-1])
+            else:
+                name = text
+                count = 1
+            storage.add_salawat_count(user_id, today, name, count)
+            await update.message.reply_text(f"✅ Salovat \"{name}\" saqlandi ({count}x).")
+            return
+
+        if action == "add_goal":
+            storage.add_goal(user_id, today, text)
+            await update.message.reply_text(f"✅ Maqsad saqlandi: {text}")
+            return
+
+        if action == "add_task":
+            storage.set_task_status(user_id, today, text, "not_done")
+            await update.message.reply_text(f"✅ Vazifa saqlandi: {text}")
+            return
+
     if user_id not in PENDING_SNOOZE:
         return
     text = update.message.text.strip()
@@ -262,16 +362,20 @@ def main():
     app = Application.builder().token(config.BOT_TOKEN).build()
 
     app.add_handler(CommandHandler("start", start_command, filters=ALLOWED_FILTER))
+    app.add_handler(CommandHandler("menu", menu_command, filters=ALLOWED_FILTER))
     app.add_handler(CommandHandler("stats", stats_command, filters=ALLOWED_FILTER))
     app.add_handler(CallbackQueryHandler(handle_prayer_callback, pattern=r"^pray:"))
     app.add_handler(CallbackQueryHandler(handle_dhikr_callback, pattern=r"^dhikr:"))
     app.add_handler(CallbackQueryHandler(handle_task_callback, pattern=r"^task:"))
+    app.add_handler(CallbackQueryHandler(handle_menu_callback, pattern=r"^menu:"))
     app.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND & ALLOWED_FILTER, handle_snooze_minutes))
 
     jq = app.job_queue
     jq.run_daily(schedule_today_jobs, time=dtime(hour=0, minute=5))
     jq.run_once(schedule_today_jobs, when=1)
     jq.run_daily(send_daily_tasks, time=dtime(hour=config.DAILY_TASKS_HOUR, minute=config.DAILY_TASKS_MINUTE))
+    jq.run_daily(send_morning_prompt, time=dtime(hour=7, minute=0))
+    jq.run_daily(send_evening_prompt, time=dtime(hour=23, minute=0))
     jq.run_daily(weekly_auto_report, time=dtime(hour=22, minute=0), days=(6,))
 
     log.info("Bot ishga tushdi...")

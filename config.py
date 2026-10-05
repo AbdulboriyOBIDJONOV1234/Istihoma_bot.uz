@@ -3,13 +3,13 @@ BOTNI SOZLASH — ma'lumotlarni muhit o'zgaruvchilari orqali kiriting.
 """
 import os
 
-BOT_TOKEN = os.environ.get("BOT_TOKEN", "8933526075:AAFIT_hxBFKc4OgdDnYzOSMpTzeK7j0WkZs")
+BOT_TOKEN = os.environ.get("BOT_TOKEN", "")
 
 # Siz — admin, haftalik statistika shunga yuboriladi
-ADMIN_ID = int(os.environ.get("ADMIN_ID", "8104665298") or 0)
+ADMIN_ID = int(os.environ.get("ADMIN_ID", "0") or 0)
 
 # Juftingizning Telegram ID'si
-PARTNER_ID = int(os.environ.get("PARTNER_ID", "8326732787") or 0)
+PARTNER_ID = int(os.environ.get("PARTNER_ID", "0") or 0)
 
 USERS = {
     ADMIN_ID: "Abdulboriy",
@@ -21,7 +21,7 @@ ALLOWED_IDS = set(USERS.keys())
 
 # ── SALOM / TONGGI UYG'OTISH ─────────────────────────────────────
 GREETING_TEXT = (
-    "[Ассаламу алайкум ва раҳматуллоҳи ва барокатуҳ]"
+    "[Ассаламу алайкум ва раҳматуллоҳи ва барокатуҳ](https://muslimaat.uz/maqola/847)\n\n"
     "*Bismillahir-Rohmanir-Rohiym*"
 )
 
@@ -29,6 +29,9 @@ WAKE_MOTIVATION = (
     "🌅 Bomdod namozi vaqti yaqinlashdi — turing, tahorat qiling va namozga tayyorlaning.\n\n"
     "_Kun g'alabasi tongdan boshlanadi. Bugun ham Allohga birinchi bo'lib Siz yetib boring!_"
 )
+
+MORNING_PROMPT = "Bugun uchun maqsadingiz nima? Biror maqsad yozing."
+EVENING_PROMPT = "Bugun qildingizmi? Zikr, salovat, vazifa va maqsadlaringizni qisqacha yozib bering."
 
 # Bomdoddan necha daqiqa oldin uyg'otish xabari yuborilsin
 WAKE_BEFORE_FAJR_MINUTES = 20
@@ -62,4 +65,23 @@ DHIKRS = [
     ("Allohu akbar", 33),
     ("Astag'firulloh va atubu ilayh", 33),
     ("Allohumma salli 'ala Sayyidina Muhammad", 33),
+]
+
+DEFAULT_GOALS = {
+    ADMIN_ID: [
+        "Qur'on o'qish",
+        "Ishga vaqt ajratish",
+        "Maqsadga erishish",
+    ],
+    PARTNER_ID: [
+        "Kitob o'qish",
+        "Yaxshi reja tuzish",
+        "Kun yakuni hisobotini yozish",
+    ],
+}
+
+MAIN_MENU = [
+    ["🕌 Namoz", "🙏 Zikr"],
+    ["🌙 Salovat", "🎯 Maqsad"],
+    ["✅ Vazifa", "📊 Statistika"],
 ]

@@ -52,6 +52,35 @@ def init_db():
                 UNIQUE(user_id, log_date, dhikr_name)
             )
         """)
+        cur.execute("""
+            CREATE TABLE IF NOT EXISTS goal_log (
+                id SERIAL PRIMARY KEY,
+                user_id BIGINT NOT NULL,
+                goal_date DATE NOT NULL,
+                goal_text TEXT NOT NULL,
+                status TEXT NOT NULL DEFAULT 'pending',
+                UNIQUE(user_id, goal_date, goal_text)
+            )
+        """)
+        cur.execute("""
+            CREATE TABLE IF NOT EXISTS salawat_log (
+                id SERIAL PRIMARY KEY,
+                user_id BIGINT NOT NULL,
+                log_date DATE NOT NULL,
+                salawat_name TEXT NOT NULL,
+                total_count INTEGER NOT NULL DEFAULT 0,
+                UNIQUE(user_id, log_date, salawat_name)
+            )
+        """)
+        cur.execute("""
+            CREATE TABLE IF NOT EXISTS daily_report_log (
+                id SERIAL PRIMARY KEY,
+                user_id BIGINT NOT NULL,
+                report_date DATE NOT NULL,
+                report_text TEXT NOT NULL,
+                UNIQUE(user_id, report_date)
+            )
+        """)
 
 def set_prayer_status(user_id: int, prayer_date: date, prayer_name: str, status: str):
     with _conn() as c, c.cursor() as cur:
@@ -78,6 +107,36 @@ def add_dhikr_count(user_id: int, log_date: date, dhikr_name: str, amount: int):
             ON CONFLICT (user_id, log_date, dhikr_name)
             DO UPDATE SET total_count = dhikr_log.total_count + EXCLUDED.total_count
         """, (user_id, log_date, dhikr_name, amount))
+
+def add_custom_zikr(user_id: int, log_date: date, zikr_name: str, amount: int = 1):
+    add_dhikr_count(user_id, log_date, zikr_name, amount)
+
+def add_salawat_count(user_id: int, log_date: date, salawat_name: str, amount: int = 1):
+    with _conn() as c, c.cursor() as cur:
+        cur.execute("""
+            INSERT INTO salawat_log (user_id, log_date, salawat_name, total_count)
+            VALUES (%s, %s, %s, %s)
+            ON CONFLICT (user_id, log_date, salawat_name)
+            DO UPDATE SET total_count = salawat_log.total_count + EXCLUDED.total_count
+        """, (user_id, log_date, salawat_name, amount))
+
+def add_goal(user_id: int, goal_date: date, goal_text: str):
+    with _conn() as c, c.cursor() as cur:
+        cur.execute("""
+            INSERT INTO goal_log (user_id, goal_date, goal_text, status)
+            VALUES (%s, %s, %s, 'pending')
+            ON CONFLICT (user_id, goal_date, goal_text)
+            DO NOTHING
+        """, (user_id, goal_date, goal_text))
+
+def add_daily_report(user_id: int, report_date: date, report_text: str):
+    with _conn() as c, c.cursor() as cur:
+        cur.execute("""
+            INSERT INTO daily_report_log (user_id, report_date, report_text)
+            VALUES (%s, %s, %s)
+            ON CONFLICT (user_id, report_date)
+            DO UPDATE SET report_text = EXCLUDED.report_text
+        """, (user_id, report_date, report_text))
 
 def set_task_status(user_id: int, task_date: date, task_text: str, status: str):
     with _conn() as c, c.cursor() as cur:
