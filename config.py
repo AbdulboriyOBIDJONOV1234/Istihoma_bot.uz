@@ -3,13 +3,13 @@ BOTNI SOZLASH — ma'lumotlarni muhit o'zgaruvchilari orqali kiriting.
 """
 import os
 
-BOT_TOKEN = os.environ.get("BOT_TOKEN", "")
+BOT_TOKEN = os.environ.get("BOT_TOKEN", "8933526075:AAFIT_hxBFKc4OgdDnYzOSMpTzeK7j0WkZs")
 
 # Siz — admin, haftalik statistika shunga yuboriladi
-ADMIN_ID = int(os.environ.get("ADMIN_ID", "0") or 0)
+ADMIN_ID = int(os.environ.get("ADMIN_ID", "8104665298") or 0)
 
 # Juftingizning Telegram ID'si
-PARTNER_ID = int(os.environ.get("PARTNER_ID", "0") or 0)
+PARTNER_ID = int(os.environ.get("PARTNER_ID", "8326732787") or 0)
 
 USERS = {
     ADMIN_ID: "Abdulboriy",
@@ -21,7 +21,7 @@ ALLOWED_IDS = set(USERS.keys())
 
 # ── SALOM / TONGGI UYG'OTISH ─────────────────────────────────────
 GREETING_TEXT = (
-    "[Ассаламу алайкум ва раҳматуллоҳи ва барокатуҳ](https://muslimaat.uz/maqola/847)\n\n"
+    "[Ассаламу алайкум ва раҳматуллоҳи ва барокатуҳ]"
     "*Bismillahir-Rohmanir-Rohiym*"
 )
 
