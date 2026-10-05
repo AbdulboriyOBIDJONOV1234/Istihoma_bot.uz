@@ -1,42 +1,31 @@
 """
-BOTNI SOZLASH — ma'lumotlarni muhit o'zgaruvchilari orqali kiriting.
+BOTNI SOZLASH — shu faylni o'zingizga moslab tahrirlang.
 """
 import os
 
-BOT_TOKEN = os.environ.get("BOT_TOKEN", "")
+BOT_TOKEN = os.environ.get("BOT_TOKEN", "QO'YING_SHU_YERGA_TOKENINGIZNI")
 
-# Siz — admin, haftalik statistika shunga yuboriladi
-ADMIN_ID = int(os.environ.get("ADMIN_ID", "0") or 0)
-
-# Juftingizning Telegram ID'si
-PARTNER_ID = int(os.environ.get("PARTNER_ID", "0") or 0)
+ADMIN_ID = 8104665298
+PARTNER_ID = 8326732787
 
 USERS = {
     ADMIN_ID: "Abdulboriy",
     PARTNER_ID: "Mohinur",
 }
-
-# Faqat shu ikkovi bilan ishlaydi — boshqa hech kimga javob bermaydi
 ALLOWED_IDS = set(USERS.keys())
 
 # ── SALOM / TONGGI UYG'OTISH ─────────────────────────────────────
 GREETING_TEXT = (
-    "[Ассаламу алайкум ва раҳматуллоҳи ва барокатуҳ](https://muslimaat.uz/maqola/847)\n\n"
+    "[Ассаламу алайкум ва раҳматуллоҳи ва барокатуҳ]\n\n"
     "*Bismillahir-Rohmanir-Rohiym*"
 )
-
 WAKE_MOTIVATION = (
     "🌅 Bomdod namozi vaqti yaqinlashdi — turing, tahorat qiling va namozga tayyorlaning.\n\n"
     "_Kun g'alabasi tongdan boshlanadi. Bugun ham Allohga birinchi bo'lib Siz yetib boring!_"
 )
-
-MORNING_PROMPT = "Bugun uchun maqsadingiz nima? Biror maqsad yozing."
-EVENING_PROMPT = "Bugun qildingizmi? Zikr, salovat, vazifa va maqsadlaringizni qisqacha yozib bering."
-
-# Bomdoddan necha daqiqa oldin uyg'otish xabari yuborilsin
 WAKE_BEFORE_FAJR_MINUTES = 20
 
-# ── KUNLIK VAZIFALAR ──────────────────────────────────────────────
+# ── KUNLIK VAZIFALAR (standart ro'yxat, har kuni avtomatik yuboriladi) ──
 DAILY_TASKS_HOUR = 6
 DAILY_TASKS_MINUTE = 0
 
@@ -56,9 +45,14 @@ DAILY_TASKS = {
     ],
 }
 
-# ── ZIKRLAR ────────────────────────────────────────────────────────
-# Har namozdan keyin: (nomi, bir martalik soni)
-# Tugma bosilganda shu "son" kunlik jamlanmaga qo'shib boriladi.
+# ── ERTALABKI MAQSAD SO'ROVI / KECHKI HISOBOT SO'ROVI ────────────
+MORNING_GOAL_HOUR = 6
+MORNING_GOAL_MINUTE = 30
+
+EVENING_REPORT_HOUR = 23
+EVENING_REPORT_MINUTE = 15
+
+# ── ZIKRLAR (namozdan keyingi tez tugmalar) ───────────────────────
 DHIKRS = [
     ("Subhanalloh", 33),
     ("Alhamdulillah", 33),
@@ -67,21 +61,4 @@ DHIKRS = [
     ("Allohumma salli 'ala Sayyidina Muhammad", 33),
 ]
 
-DEFAULT_GOALS = {
-    ADMIN_ID: [
-        "Qur'on o'qish",
-        "Ishga vaqt ajratish",
-        "Maqsadga erishish",
-    ],
-    PARTNER_ID: [
-        "Kitob o'qish",
-        "Yaxshi reja tuzish",
-        "Kun yakuni hisobotini yozish",
-    ],
-}
-
-MAIN_MENU = [
-    ["🕌 Namoz", "🙏 Zikr"],
-    ["🌙 Salovat", "🎯 Maqsad"],
-    ["✅ Vazifa", "📊 Statistika"],
-]
+DEFAULT_DHIKR_COUNT = 33  # "Zikr/Salovat qo'shish"da son yozilmasa shu ishlatiladi
